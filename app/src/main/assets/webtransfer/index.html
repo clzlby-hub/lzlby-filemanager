@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>File Manager 文件传输</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <style>
+    :root {
+      --bg: #000000;
+      --card-bg: rgba(28, 28, 30, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --input-bg: rgba(255, 255, 255, 0.06);
+      --input-border: rgba(255, 255, 255, 0.12);
+      --primary: #0A84FF;
+      --primary-gradient: linear-gradient(135deg, #0A84FF 0%, #0066CC 100%);
+      --success: #30D158;
+      --error: #FF453A;
+      --text: #FFFFFF;
+      --text-secondary: rgba(235, 235, 245, 0.6);
+      --text-tertiary: rgba(235, 235, 245, 0.38);
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: max(28px, env(safe-area-inset-top)) 16px max(32px, env(safe-area-inset-bottom));
+      -webkit-font-smoothing: antialiased;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .header-icon-wrapper {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, rgba(10, 132, 255, 0.18), rgba(10, 132, 255, 0.06));
+      border: 1px solid rgba(10, 132, 255, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+      box-shadow: 0 4px 20px rgba(10, 132, 255, 0.18);
+    }
+    .header-icon-wrapper svg {
+      color: var(--primary);
+    }
+    .header h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(48, 209, 88, 0.12);
+      border: 1px solid rgba(48, 209, 88, 0.25);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--success);
+    }
+    .badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: var(--success);
+      box-shadow: 0 0 8px var(--success);
+    }
+    .card {
+      width: 100%;
+      max-width: 480px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 18px;
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .card-title-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .card-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
+      background: rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary);
+      flex-shrink: 0;
+    }
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: -0.2px;
+    }
+    .btn-refresh {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--card-border);
+      color: var(--text-secondary);
+      border-radius: 8px;
+      padding: 5px 10px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s ease;
+    }
+    .btn-refresh:active {
+      transform: scale(0.96);
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+    }
+    .file-dropzone {
+      border: 1.5px dashed rgba(255, 255, 255, 0.18);
+      border-radius: 14px;
+      padding: 28px 16px;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.02);
+      margin-bottom: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .file-dropzone:active, .file-dropzone.dragover {
+      border-color: var(--primary);
+      background: rgba(10, 132, 255, 0.08);
+    }
+    .file-dropzone svg {
+      color: var(--text-secondary);
+      transition: color 0.2s;
+    }
+    .file-dropzone:hover svg, .file-dropzone:active svg {
+      color: var(--primary);
+    }
+    .dropzone-label {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text);
+    }
+    .dropzone-tags {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .format-tag {
+      font-size: 11px;
+      font-weight: 500;
+      padding: 2px 7px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-secondary);
+    }
+    .file-chip {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      background: rgba(48, 209, 88, 0.12);
+      border: 1px solid rgba(48, 209, 88, 0.25);
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 13px;
+      color: var(--success);
+      margin-top: 6px;
+      max-width: 100%;
+      word-break: break-all;
+    }
+    .file-chip.show {
+      display: flex;
+    }
+    .btn {
+      width: 100%;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: var(--primary-gradient);
+      color: #fff;
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: -0.2px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+      box-shadow: 0 4px 14px rgba(10, 132, 255, 0.28);
+    }
+    .btn:active {
+      transform: scale(0.98);
+      opacity: 0.9;
+    }
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .progress-wrapper {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 14px;
+      padding: 12px 14px;
+      background: var(--input-bg);
+      border-radius: 12px;
+      border: 1px solid var(--input-border);
+    }
+    .progress-bar-bg {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      width: 0%;
+      height: 100%;
+      background: var(--primary-gradient);
+      border-radius: 3px;
+      transition: width 0.15s ease;
+    }
+    .progress-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    .file-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 420px;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+    .file-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      background: var(--input-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      gap: 12px;
+      transition: background 0.15s ease;
+    }
+    .file-item:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .file-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+      flex: 1;
+    }
+    .file-icon-box {
+      width: 36px;
+      height: 36px;
+      border-radius: 9px;
+      background: rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: var(--primary);
+    }
+    .file-meta-col {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .file-name-text {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .file-sub-text {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+    .file-actions-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .btn-action {
+      height: 32px;
+      padding: 0 12px;
+      border-radius: 8px;
+      border: none;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      text-decoration: none;
+      transition: all 0.15s ease;
+    }
+    .btn-download {
+      background: rgba(10, 132, 255, 0.15);
+      border: 1px solid rgba(10, 132, 255, 0.3);
+      color: var(--primary);
+    }
+    .btn-download:active {
+      background: var(--primary);
+      color: #fff;
+    }
+    .btn-delete {
+      background: rgba(255, 69, 58, 0.12);
+      border: 1px solid rgba(255, 69, 58, 0.25);
+      color: var(--error);
+    }
+    .btn-delete:active {
+      background: var(--error);
+      color: #fff;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 36px 16px;
+      color: var(--text-tertiary);
+      font-size: 13px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .empty-state svg {
+      color: var(--text-tertiary);
+      opacity: 0.6;
+    }
+    .tip-text {
+      font-size: 12px;
+      color: var(--text-tertiary);
+      line-height: 1.5;
+      margin-top: 10px;
+      text-align: center;
+    }
+    /* Dynamic Island Toast */
+    .toast {
+      position: fixed;
+      top: max(20px, env(safe-area-inset-top));
+      left: 50%;
+      transform: translateX(-50%) translateY(-70px);
+      background: rgba(30, 30, 32, 0.94);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      padding: 10px 18px;
+      border-radius: 999px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #fff;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 9999;
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <!-- Toast Notification -->
+  <div id="toast" class="toast">
+    <span id="toastIcon"></span>
+    <span id="toastMsg"></span>
+  </div>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-icon-wrapper">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+        <line x1="12" y1="11" x2="12" y2="17"></line>
+        <polyline points="9 14 12 11 15 14"></polyline>
+      </svg>
+    </div>
+    <h1>File Manager 文件传输</h1>
+    <div class="badge">
+      <span class="badge-dot"></span>
+      <span id="headerStatus">电视已连接 · Download 目录</span>
+    </div>
+    <div style="margin-top: 12px;">
+      <a href="/storage" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 999px; background: rgba(10, 132, 255, 0.14); border: 1px solid rgba(10, 132, 255, 0.3); color: var(--primary); text-decoration: none; font-size: 13px; font-weight: 600;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+        添加网络存储到电视 (SMB / WebDAV / FTP) →
+      </a>
+    </div>
+  </div>
+
+  <!-- Card 1: 上传文件至电视 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title-group">
+        <div class="card-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"></path>
+            <path d="M12 12v9"></path>
+            <path d="m16 16-4-4-4 4"></path>
+          </svg>
+        </div>
+        <div class="card-title">上传文件至电视</div>
+      </div>
+    </div>
+    <div class="file-dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"></path>
+        <path d="M12 12v9"></path>
+        <path d="m16 16-4-4-4 4"></path>
+      </svg>
+      <div class="dropzone-label">点击选择或拖拽文件至此处</div>
+      <div class="dropzone-tags">
+        <span class="format-tag">APK 安装包</span>
+        <span class="format-tag">影视视频</span>
+        <span class="format-tag">音乐音频</span>
+        <span class="format-tag">压缩包</span>
+        <span class="format-tag">任意文件</span>
+      </div>
+      <div id="fileChip" class="file-chip">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        <span id="fileChipText"></span>
+      </div>
+      <input type="file" id="fileInput" multiple style="display:none" onchange="onFilesSelected(event)" />
+    </div>
+
+    <button id="uploadBtn" class="btn" onclick="startUpload()" disabled>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+        <polyline points="17 8 12 3 7 8"></polyline>
+        <line x1="12" y1="3" x2="12" y2="15"></line>
+      </svg>
+      <span>开始上传至电视</span>
+    </button>
+
+    <div id="progressWrapper" class="progress-wrapper">
+      <div class="progress-bar-bg">
+        <div id="progressBarFill" class="progress-bar-fill"></div>
+      </div>
+      <div class="progress-info">
+        <span id="progressLabel">准备上传...</span>
+        <span id="progressSpeed">0 MB/s</span>
+      </div>
+    </div>
+    <div class="tip-text">传输的文件将直接存放在电视的 Download 目录，可在电视上直接安装或播放</div>
+  </div>
+
+  <!-- Card 2: 电视 Download 目录文件管理 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title-group">
+        <div class="card-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+          </svg>
+        </div>
+        <div class="card-title">电视 Download 目录文件</div>
+      </div>
+      <button class="btn-refresh" onclick="fetchFiles()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <polyline points="1 20 1 14 7 14"></polyline>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+        </svg>
+        <span>刷新</span>
+      </button>
+    </div>
+    <div class="file-list" id="fileList">
+      <div class="empty-state">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        <span>加载中...</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let selectedFiles = [];
+
+    function showToast(msg, isSuccess = true) {
+      const toast = document.getElementById('toast');
+      const icon = document.getElementById('toastIcon');
+      const text = document.getElementById('toastMsg');
+      icon.innerHTML = isSuccess ? '✓' : '✕';
+      icon.style.color = isSuccess ? 'var(--success)' : 'var(--error)';
+      text.textContent = msg;
+      toast.className = 'toast show';
+      setTimeout(() => { toast.className = 'toast'; }, 2600);
+    }
+
+    function formatBytes(bytes) {
+      if (!bytes || bytes === 0) return '0 B';
+      const k = 1024, sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return (bytes / Math.pow(k, i)).toFixed(1) + ' ' + sizes[i];
+    }
+
+    function formatDate(ms) {
+      if (!ms) return '';
+      const d = new Date(ms);
+      return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function getFileTypeIconSvg(name) {
+      const n = name.toLowerCase();
+      if (n.endsWith('.apk')) {
+        return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>';
+      }
+      if (n.endsWith('.mp4') || n.endsWith('.mkv') || n.endsWith('.avi') || n.endsWith('.mov') || n.endsWith('.ts')) {
+        return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg>';
+      }
+      if (n.endsWith('.mp3') || n.endsWith('.flac') || n.endsWith('.wav') || n.endsWith('.aac')) {
+        return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>';
+      }
+      if (n.endsWith('.zip') || n.endsWith('.rar') || n.endsWith('.7z') || n.endsWith('.tar') || n.endsWith('.gz')) {
+        return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 20l4-16"></path><path d="M14 20L10 4"></path><rect x="4" y="2" width="16" height="20" rx="2"></rect></svg>';
+      }
+      return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>';
+    }
+
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('fileInput');
+    const fileChip = document.getElementById('fileChip');
+    const fileChipText = document.getElementById('fileChipText');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const progressWrapper = document.getElementById('progressWrapper');
+    const progressBarFill = document.getElementById('progressBarFill');
+    const progressLabel = document.getElementById('progressLabel');
+    const progressSpeed = document.getElementById('progressSpeed');
+
+    ['dragenter', 'dragover'].forEach(name => dropzone.addEventListener(name, (e) => {
+      e.preventDefault();
+      dropzone.classList.add('dragover');
+    }));
+    ['dragleave', 'drop'].forEach(name => dropzone.addEventListener(name, (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+    }));
+
+    dropzone.addEventListener('drop', (e) => {
+      if (e.dataTransfer && e.dataTransfer.files.length > 0) {
+        setFiles(e.dataTransfer.files);
+      }
+    });
+
+    function onFilesSelected(e) {
+      if (e.target.files && e.target.files.length > 0) {
+        setFiles(e.target.files);
+      }
+    }
+
+    function setFiles(files) {
+      selectedFiles = Array.from(files);
+      if (selectedFiles.length === 1) {
+        fileChipText.textContent = selectedFiles[0].name + ' (' + formatBytes(selectedFiles[0].size) + ')';
+      } else {
+        fileChipText.textContent = '已选择 ' + selectedFiles.length + ' 个文件';
+      }
+      fileChip.classList.add('show');
+      uploadBtn.disabled = false;
+    }
+
+    async function startUpload() {
+      if (selectedFiles.length === 0) return;
+      uploadBtn.disabled = true;
+      progressWrapper.style.display = 'flex';
+
+      for (let i = 0; i < selectedFiles.length; i++) {
+        await uploadSingle(selectedFiles[i], i + 1, selectedFiles.length);
+      }
+
+      progressWrapper.style.display = 'none';
+      fileChip.classList.remove('show');
+      fileInput.value = '';
+      selectedFiles = [];
+      uploadBtn.disabled = true;
+      showToast('所有文件传输完成！', true);
+      fetchFiles();
+    }
+
+    function uploadSingle(file, index, total) {
+      return new Promise((resolve, reject) => {
+        progressBarFill.style.width = '0%';
+        progressLabel.textContent = '[' + index + '/' + total + '] 正在上传 ' + file.name + '...';
+
+        let lastLoaded = 0;
+        let lastTime = Date.now();
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/upload?name=' + encodeURIComponent(file.name), true);
+
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            const pct = Math.round((e.loaded / e.total) * 100);
+            progressBarFill.style.width = pct + '%';
+            const now = Date.now();
+            const elapsed = (now - lastTime) / 1000;
+            if (elapsed >= 0.4) {
+              const speed = (e.loaded - lastLoaded) / elapsed;
+              progressSpeed.textContent = (speed / (1024 * 1024)).toFixed(1) + ' MB/s (' + pct + '%)';
+              lastLoaded = e.loaded;
+              lastTime = now;
+            }
+          }
+        };
+
+        xhr.onload = () => {
+          if (xhr.status === 200) {
+            showToast(file.name + ' 上传成功！', true);
+            resolve();
+          } else {
+            showToast(file.name + ' 上传失败', false);
+            reject();
+          }
+        };
+
+        xhr.onerror = () => {
+          showToast(file.name + ' 网络异常', false);
+          reject();
+        };
+
+        xhr.send(file);
+      });
+    }
+
+    async function fetchFiles() {
+      try {
+        const res = await fetch('/api/files');
+        const list = await res.json();
+        const container = document.getElementById('fileList');
+        if (!list || list.length === 0) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+              </svg>
+              <span>Download 目录暂无文件</span>
+            </div>`;
+          return;
+        }
+
+        container.innerHTML = list.map(f => `
+          <div class="file-item">
+            <div class="file-info">
+              <div class="file-icon-box">
+                ${getFileTypeIconSvg(f.name)}
+              </div>
+              <div class="file-meta-col">
+                <div class="file-name-text" title="${f.name}">${f.name}</div>
+                <div class="file-sub-text">${formatBytes(f.size)} • ${formatDate(f.modified)}</div>
+              </div>
+            </div>
+            <div class="file-actions-group">
+              <a class="btn-action btn-download" href="/api/download?name=${encodeURIComponent(f.name)}">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span>下载</span>
+              </a>
+              <button class="btn-action btn-delete" onclick="deleteFile('${encodeURIComponent(f.name)}')">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+                <span>删除</span>
+              </button>
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {
+        showToast('获取文件列表失败', false);
+      }
+    }
+
+    async function deleteFile(name) {
+      if (!confirm('确定从电视中删除此文件吗？')) return;
+      try {
+        const res = await fetch('/api/delete?name=' + name, { method: 'POST' });
+        const json = await res.json();
+        if (json.success) {
+          showToast('已删除文件', true);
+          fetchFiles();
+        } else {
+          showToast('删除失败', false);
+        }
+      } catch (_) {
+        showToast('请求失败', false);
+      }
+    }
+
+    fetchFiles();
+  </script>
+</body>
+</html>

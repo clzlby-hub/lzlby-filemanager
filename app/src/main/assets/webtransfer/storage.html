@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>添加网络存储 - File Manager</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <style>
+    :root {
+      --bg: #000000;
+      --card-bg: rgba(28, 28, 30, 0.78);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --input-bg: rgba(255, 255, 255, 0.06);
+      --input-border: rgba(255, 255, 255, 0.12);
+      --primary: #0A84FF;
+      --primary-gradient: linear-gradient(135deg, #0A84FF 0%, #0066CC 100%);
+      --success: #30D158;
+      --error: #FF453A;
+      --text: #FFFFFF;
+      --text-secondary: rgba(235, 235, 245, 0.6);
+      --text-tertiary: rgba(235, 235, 245, 0.38);
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: max(24px, env(safe-area-inset-top)) 16px max(32px, env(safe-area-inset-bottom));
+      -webkit-font-smoothing: antialiased;
+    }
+    .top-nav {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .nav-link {
+      color: var(--primary);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 22px;
+    }
+    .header-icon-wrapper {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, rgba(10, 132, 255, 0.2), rgba(10, 132, 255, 0.06));
+      border: 1px solid rgba(10, 132, 255, 0.3);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+      box-shadow: 0 4px 20px rgba(10, 132, 255, 0.18);
+    }
+    .header-icon-wrapper svg {
+      color: var(--primary);
+    }
+    .header h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+      margin-bottom: 6px;
+    }
+    .header p {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    .card {
+      width: 100%;
+      max-width: 480px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 22px;
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+    .seg-control {
+      display: flex;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      padding: 4px;
+      margin-bottom: 20px;
+      gap: 4px;
+    }
+    .seg-btn {
+      flex: 1;
+      padding: 8px 0;
+      border-radius: 9px;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .seg-btn.active {
+      background: var(--primary);
+      color: #FFFFFF;
+      box-shadow: 0 2px 10px rgba(10, 132, 255, 0.35);
+    }
+    .form-group {
+      margin-bottom: 16px;
+    }
+    .form-row {
+      display: flex;
+      gap: 12px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+    .form-input {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: 11px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-size: 14.5px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-input:focus {
+      border-color: var(--primary);
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .form-input::placeholder {
+      color: var(--text-tertiary);
+    }
+    .toggle-group {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+    }
+    .toggle-label {
+      font-size: 14px;
+      color: var(--text);
+    }
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 46px;
+      height: 26px;
+    }
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: rgba(255, 255, 255, 0.16);
+      transition: .3s;
+      border-radius: 34px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: var(--primary);
+    }
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+    .btn-submit {
+      width: 100%;
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: 13px;
+      border: none;
+      background: var(--primary-gradient);
+      color: #FFFFFF;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 18px rgba(10, 132, 255, 0.35);
+      transition: transform 0.15s, opacity 0.15s;
+    }
+    .btn-submit:active {
+      transform: scale(0.98);
+      opacity: 0.9;
+    }
+    .btn-submit:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .toast {
+      position: fixed;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-100px);
+      background: rgba(30, 30, 32, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      color: #FFFFFF;
+      padding: 12px 22px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s;
+      opacity: 0;
+      z-index: 9999;
+      pointer-events: none;
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top-nav">
+    <a href="/" class="nav-link">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      文件传输
+    </a>
+  </div>
+
+  <div class="header">
+    <div class="header-icon-wrapper">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+        <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+        <line x1="6" y1="6" x2="6.01" y2="6"></line>
+        <line x1="6" y1="18" x2="6.01" y2="18"></line>
+      </svg>
+    </div>
+    <h1>添加网络存储空间</h1>
+    <p>在手机上轻松配置，一键保存并同步至电视</p>
+  </div>
+
+  <div class="card">
+    <!-- Type Selector -->
+    <div class="seg-control">
+      <button class="seg-btn active" data-type="smb" onclick="switchType('smb')">SMB 共享</button>
+      <button class="seg-btn" data-type="webdav" onclick="switchType('webdav')">WebDAV</button>
+      <button class="seg-btn" data-type="ftp" onclick="switchType('ftp')">FTP</button>
+      <button class="seg-btn" data-type="sftp" onclick="switchType('sftp')">SFTP</button>
+    </div>
+
+    <form id="storageForm" onsubmit="submitStorage(event)">
+      <div class="form-group">
+        <label>显示名称（可选）</label>
+        <input type="text" id="name" class="form-input" placeholder="例如：我的 NAS / 客厅电脑">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group" style="flex: 3;">
+          <label>服务器主机 / IP 地址 *</label>
+          <input type="text" id="host" class="form-input" placeholder="192.168.1.100 或 http://...:5244" oninput="onHostInput()" onblur="parseHostInput()" required>
+        </div>
+        <div class="form-group" style="flex: 1.3;">
+          <label>端口</label>
+          <input type="number" id="port" class="form-input" placeholder="445" value="445">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>共享路径（可选）</label>
+        <input type="text" id="path" class="form-input" placeholder="例如：video 或 /dav">
+      </div>
+
+      <div class="form-group">
+        <label>用户名（可选）</label>
+        <input type="text" id="username" class="form-input" placeholder="SMB 留空表示匿名访客">
+      </div>
+
+      <div class="form-group">
+        <label>密码（可选）</label>
+        <input type="password" id="password" class="form-input" placeholder="密码">
+      </div>
+
+      <div class="form-group" id="domainGroup">
+        <label>域名 / 工作组（可选）</label>
+        <input type="text" id="domain" class="form-input" placeholder="WORKGROUP">
+      </div>
+
+      <div class="form-group" id="sslGroup" style="display: none;">
+        <div class="toggle-group">
+          <span class="toggle-label">启用 HTTPS / SSL</span>
+          <label class="switch">
+            <input type="checkbox" id="sslToggle" onchange="onSslChange()">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <button type="submit" id="submitBtn" class="btn-submit">保存并添加到电视</button>
+    </form>
+  </div>
+
+  <div id="toast" class="toast">
+    <span id="toastMsg"></span>
+  </div>
+
+  <script>
+    let currentType = 'smb';
+
+    function switchType(type) {
+      currentType = type;
+      document.querySelectorAll('.seg-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-type') === type);
+      });
+
+      const portInput = document.getElementById('port');
+      const domainGroup = document.getElementById('domainGroup');
+      const sslGroup = document.getElementById('sslGroup');
+      const pathInput = document.getElementById('path');
+
+      domainGroup.style.display = (type === 'smb') ? 'block' : 'none';
+      sslGroup.style.display = (type === 'webdav') ? 'block' : 'none';
+
+      if (type === 'smb') {
+        portInput.value = '445';
+        portInput.placeholder = '445';
+        pathInput.placeholder = '例如：share 或 movies';
+      } else if (type === 'webdav') {
+        const isSsl = document.getElementById('sslToggle').checked;
+        portInput.value = isSsl ? '443' : '80';
+        portInput.placeholder = '80 / 443 / 5244 / 5005';
+        pathInput.placeholder = '例如：/dav 或 /';
+      } else if (type === 'ftp') {
+        portInput.value = '21';
+        portInput.placeholder = '21';
+        pathInput.placeholder = '例如：/ 或 public';
+      } else if (type === 'sftp') {
+        portInput.value = '22';
+        portInput.placeholder = '22';
+        pathInput.placeholder = '例如：/home/user';
+      }
+    }
+
+    function onHostInput() {
+      const val = document.getElementById('host').value;
+      if (val.includes('://') || val.includes('/') || (val.includes(':') && !val.startsWith('['))) {
+        parseHostInput();
+      }
+    }
+
+    function parseHostInput() {
+      let raw = document.getElementById('host').value.trim();
+      if (!raw) return;
+
+      // 1. Detect scheme
+      const schemeMatch = raw.match(/^([a-zA-Z][a-zA-Z0-9+-.]*):\/\//);
+      if (schemeMatch) {
+        const scheme = schemeMatch[1].toLowerCase();
+        raw = raw.substring(schemeMatch[0].length);
+        if (scheme === 'https' || scheme === 'davs') {
+          switchType('webdav');
+          document.getElementById('sslToggle').checked = true;
+        } else if (scheme === 'http' || scheme === 'dav') {
+          switchType('webdav');
+          document.getElementById('sslToggle').checked = false;
+        } else if (scheme === 'smb') {
+          switchType('smb');
+        } else if (scheme === 'ftp') {
+          switchType('ftp');
+        } else if (scheme === 'sftp') {
+          switchType('sftp');
+        }
+      }
+
+      // 2. Extract path
+      const slashIdx = raw.indexOf('/');
+      if (slashIdx !== -1) {
+        const extractedPath = raw.substring(slashIdx);
+        raw = raw.substring(0, slashIdx);
+        const pathInput = document.getElementById('path');
+        if (!pathInput.value.trim() && extractedPath.length > 1) {
+          pathInput.value = extractedPath;
+        }
+      }
+
+      // 3. Extract port
+      if (raw.startsWith('[') && raw.includes(']:')) {
+        const closeBracket = raw.indexOf(']:');
+        const portStr = raw.substring(closeBracket + 2);
+        raw = raw.substring(1, closeBracket);
+        const p = parseInt(portStr);
+        if (p > 0 && p <= 65535) {
+          document.getElementById('port').value = p;
+        }
+      } else if (!raw.startsWith('[') && raw.includes(':')) {
+        const colonIdx = raw.lastIndexOf(':');
+        const portStr = raw.substring(colonIdx + 1);
+        const possibleHost = raw.substring(0, colonIdx);
+        const p = parseInt(portStr);
+        if (p > 0 && p <= 65535) {
+          raw = possibleHost;
+          document.getElementById('port').value = p;
+        }
+      }
+
+      document.getElementById('host').value = raw;
+    }
+
+    function onSslChange() {
+      if (currentType === 'webdav') {
+        const isSsl = document.getElementById('sslToggle').checked;
+        const portInput = document.getElementById('port');
+        const curVal = portInput.value.trim();
+        // Never override user's custom port (e.g. 1000, 5244, 5005); only flip between standard 80/443
+        if (!curVal || curVal === '80' || curVal === '443') {
+          portInput.value = isSsl ? '443' : '80';
+        }
+      }
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3500);
+    }
+
+    async function submitStorage(e) {
+      e.preventDefault();
+      parseHostInput();
+
+      const host = document.getElementById('host').value.trim();
+      if (!host) {
+        showToast('请输入服务器主机或 IP 地址');
+        return;
+      }
+
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = '正在提交至电视...';
+
+      const portVal = parseInt(document.getElementById('port').value.trim()) || 0;
+
+      const payload = {
+        type: currentType,
+        name: document.getElementById('name').value.trim(),
+        host: host,
+        port: portVal,
+        path: document.getElementById('path').value.trim(),
+        username: document.getElementById('username').value.trim(),
+        password: document.getElementById('password').value,
+        domain: (currentType === 'smb') ? document.getElementById('domain').value.trim() : '',
+        ssl: (currentType === 'webdav') ? document.getElementById('sslToggle').checked : false
+      };
+
+      try {
+        const resp = await fetch('/api/storage/add', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const res = await resp.json();
+        if (resp.ok && res.success) {
+          const displayTarget = res.authority ? `${res.name} (${res.authority})` : res.name;
+          showToast(`已成功添加到电视：${displayTarget}`);
+          submitBtn.textContent = '已成功添加到电视！';
+          submitBtn.style.background = 'linear-gradient(135deg, #30D158 0%, #248A3D 100%)';
+          setTimeout(() => {
+            submitBtn.disabled = false;
+            submitBtn.textContent = '继续添加其他存储';
+            submitBtn.style.background = '';
+          }, 2500);
+        } else {
+          showToast('添加失败: ' + (res.error || '未知错误'));
+          submitBtn.disabled = false;
+          submitBtn.textContent = '保存并添加到电视';
+        }
+      } catch (err) {
+        showToast('网络错误，请检查与电视的连接');
+        submitBtn.disabled = false;
+        submitBtn.textContent = '保存并添加到电视';
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+android {
+    signingConfigs {
+        release {
+            def properties
+            def propertiesFile = rootProject.file('signing.properties')
+            if (propertiesFile.exists()) {
+                properties = new Properties()
+                properties.load(propertiesFile.newDataInputStream())
+            }
+            def getString = { String propertyName, String environmentName ->
+                return properties?.get(propertyName) ?: System.getenv(environmentName)
+            }
+
+            def sf = getString('storeFile', 'STORE_FILE')?.with(rootProject.&file)
+            if (sf != null && sf.exists()) {
+                storeFile sf
+                storePassword getString('storePassword', 'STORE_PASSWORD')
+                keyAlias getString('keyAlias', 'KEY_ALIAS')
+                keyPassword getString('keyPassword', 'KEY_PASSWORD')
+            } else {
+                def debugKeystore = new File(System.getProperty('user.home'), '.android/debug.keystore')
+                if (debugKeystore.exists()) {
+                    storeFile debugKeystore
+                    storePassword 'android'
+                    keyAlias 'androiddebugkey'
+                    keyPassword 'android'
+                }
+            }
+        }
+    }
+}

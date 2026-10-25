@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0D0E12">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingStart="36dp"
+        android:paddingTop="20dp"
+        android:paddingEnd="36dp"
+        android:paddingBottom="20dp">
+
+        <!-- Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/storage_lan_title"
+                android:textColor="#FFFFFF"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:text="@string/storage_lan_subtitle"
+                android:textColor="#8E929E"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <!-- Main Content Area: Two Columns -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_marginTop="16dp"
+            android:layout_weight="1"
+            android:baselineAligned="false"
+            android:orientation="horizontal">
+
+            <!-- Left Column: QR Code & Connection Info -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@drawable/card_tv_background"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <FrameLayout
+                    android:layout_width="190dp"
+                    android:layout_height="190dp"
+                    android:background="@drawable/qr_tv_container_background"
+                    android:padding="10dp">
+
+                    <ImageView
+                        android:id="@+id/qrImageView"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scaleType="fitCenter"
+                        tools:src="@android:drawable/ic_menu_gallery" />
+
+                    <ProgressBar
+                        android:id="@+id/qrProgressBar"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:layout_gravity="center" />
+                </FrameLayout>
+
+                <TextView
+                    android:id="@+id/urlTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:textColor="?attr/colorPrimary"
+                    android:textSize="19sp"
+                    android:textStyle="bold"
+                    tools:text="http://10.10.2.137:8888/storage" />
+
+                <TextView
+                    android:id="@+id/statusTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="@string/storage_lan_waiting"
+                    android:textColor="#30D158"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <!-- Spacer -->
+            <Space
+                android:layout_width="20dp"
+                android:layout_height="match_parent" />
+
+            <!-- Right Column: Protocol Info, Steps & Action -->
+            <androidx.core.widget.NestedScrollView
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@drawable/card_tv_background"
+                android:fillViewport="true">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/storage_lan_supported"
+                        android:textColor="#FFFFFF"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <!-- Steps Title -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:text="@string/web_transfer_tips_title"
+                        android:textColor="#8E929E"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:lineSpacingExtra="2dp"
+                        android:text="@string/storage_lan_step1"
+                        android:textColor="#D0D4E0"
+                        android:textSize="13sp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:lineSpacingExtra="2dp"
+                        android:text="@string/storage_lan_step2"
+                        android:textColor="#D0D4E0"
+                        android:textSize="13sp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:lineSpacingExtra="2dp"
+                        android:text="@string/storage_lan_step3"
+                        android:textColor="#D0D4E0"
+                        android:textSize="13sp" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginTop="16dp"
+                        android:layout_marginBottom="14dp"
+                        android:background="#242730" />
+
+                    <TextView
+                        android:id="@+id/backButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="42dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:focusableInTouchMode="false"
+                        android:gravity="center"
+                        android:singleLine="true"
+                        android:text="@string/storage_lan_finish"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </androidx.core.widget.NestedScrollView>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Success Overlay -->
+    <LinearLayout
+        android:id="@+id/successOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#D00D0E12"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="420dp"
+            android:layout_height="wrap_content"
+            android:background="@drawable/card_tv_background"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="32dp">
+
+            <ImageView
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:src="@drawable/ic_checkbox_checked" />
+
+            <TextView
+                android:id="@+id/successTitleText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="存储空间添加成功！"
+                android:textColor="#FFFFFF"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/successSubText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="正在同步并返回文件管理器…"
+                android:textColor="#8E929E"
+                android:textSize="14sp" />
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>
